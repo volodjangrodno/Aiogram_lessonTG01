@@ -1,7 +1,9 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
+from gtts import gTTS
+import os
 
 from config import TOKEN
 
@@ -35,6 +37,33 @@ async def react_photo(message: Message):
 @dp.message(F.text == "Привет") # ответ бота на сообщение от нас "Привет"
 async def answer(message: Message):
     await message.answer(f"Слушаю и повинуюсь, {message.from_user.full_name}!")
+
+@dp.message(Command('video')) # Здесь бот высылает видео по команде /video
+async def video(message: Message):
+    await bot.send_chat_action(message.chat.id, 'upload_video') # Здесь бот подтверждает действие "upload_video" в чате
+    video = FSInputFile('video.mp4')
+    await bot.send_video(message.chat.id, video)
+
+@dp.message(Command('audio')) # Здесь бот высылает аудио по команде /audio
+async def audio(message: Message):
+    audio = FSInputFile('audio.mp3')
+    await bot.send_audio(message.chat.id, audio)
+
+@dp.message(Command('training')) # Здесь бот высылает рандомную тренировку по команде /training и озвучивает её
+async def training(message: Message):
+    training_list = [
+        "Тренировка 1: \n 1. Приседания с весом тела - 3 подхода по 15 повторений. \n 2. Отжимания - 3 подхода по 10 повторений. \n3. Выпады вперед - 3 подхода по 12 повторений на каждую ногу. \n 4. Планка (статическое удержание) - 3 подхода по 1 минуте. \n 5. Супермен (подъемы рук и ног лежа на животе) - 3 подхода по 15 повторений.",
+        "Тренировка 2: \n 1. Бёрпи - 3 подхода по 10 повторений. \n 2. Прыжки через скакалку - 3 подхода по 1 минуте. \n 3. Альпинисты (Mountain Climbers) - 3 подхода по 30 секунд. \n 4. Высокие колени (High Knees) - 3 подхода по 1 минуте. \n 5. Бег на месте с ускорениями (интервалы 30 секунд обычный бег, 30 секунд ускорение) - 3 подхода.",
+        "Тренировка 3: \n 1. Йога поза Собака мордой вниз - удержание 1 минута. \n 2. Поза Воин 1 - удержание по 1 минуте на каждую ногу. \n 3. Поза Планка - удержание 1 минута. \n 4. Подъемы на носки стоя (для икроножных мышц) - 3 подхода по 15 повторений. \n 5. Баланс на одной ноге с касанием пола - 3 подхода по 10 повторений на каждую ногу."
+    ]
+    rand_tr = random.choice(training_list)
+    await message.answer(f"Это ваша мини-тренировка на сегодня {rand_tr} \n")
+
+    tts = gTTS(text=rand_tr, lang='ru') # преобразование текста тренировки в аудио
+    tts.save('training.mp3') # сохранение аудио
+    audio = FSInputFile('training.mp3')
+    await bot.send_audio(message.chat.id, audio) # отправка аудио в чат
+    os.remove('training.mp3') # удаление аудио
 
 @dp.message(Command('help'))
 async def help(message: Message):
