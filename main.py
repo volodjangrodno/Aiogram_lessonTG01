@@ -49,6 +49,19 @@ async def audio(message: Message):
     audio = FSInputFile('audio.mp3')
     await bot.send_audio(message.chat.id, audio)
 
+@dp.message(Command('voice'))
+async def voice(message: Message):
+    voice = FSInputFile('voice.ogg') # ogg - формат голосового сообщения, который нельзя скачать, а mp3 можно
+    await bot.send_voice(message.chat.id, voice) # второй вариант отправки голосового сообщения
+    # - заменить bot.send_voice на message.answer_voice.
+    # И при этом не нужно в скобках указывать message.chat.id
+    # await message.answer_voice(voice)
+
+@dp.message(Command('doc'))
+async def doc(message: Message):
+	doc = FSInputFile("TG02.pdf")
+	await bot.send_document(message.chat.id, doc)
+
 @dp.message(Command('training')) # Здесь бот высылает рандомную тренировку по команде /training и озвучивает её
 async def training(message: Message):
     training_list = [
@@ -60,14 +73,14 @@ async def training(message: Message):
     await message.answer(f"Это ваша мини-тренировка на сегодня {rand_tr} \n")
 
     tts = gTTS(text=rand_tr, lang='ru') # преобразование текста тренировки в аудио
-    tts.save('training.mp3') # сохранение аудио
+    tts.save('training.mp3') # сохранение аудио, можно также сохранить в формате ogg
     audio = FSInputFile('training.mp3')
-    await bot.send_audio(message.chat.id, audio) # отправка аудио в чат
-    os.remove('training.mp3') # удаление аудио
+    await bot.send_audio(message.chat.id, audio) # отправка аудио в чат, можно также отпривить в формате ogg
+    os.remove('training.mp3') # удаление аудио (можно также удалить в формате ogg)
 
 @dp.message(Command('help'))
 async def help(message: Message):
-    await message.answer("Этот бот умеет выполнять команды: \n /start \n /help \n /photo")
+    await message.answer("Этот бот умеет выполнять команды: \n /start \n /help \n /photo \n /video \n /audio \n /training")
 
 @dp.message(CommandStart())
 async def start(message: Message):
