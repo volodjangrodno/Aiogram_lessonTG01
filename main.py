@@ -1,11 +1,12 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, CallbackQuery
 from gtts import gTTS
 import os
 
 from config import TOKEN
+import keyboards as kb
 
 import random
 
@@ -82,9 +83,33 @@ async def training(message: Message):
 async def help(message: Message):
     await message.answer("Этот бот умеет выполнять команды: \n /start \n /help \n /photo \n /video \n /audio \n /training")
 
+@dp.callback_query(F.data == 'news') # при нажатии на кнопку "Новости" бот высылает сообщение - либо просто текст, либо текст с кнопками
+async def news(callback: CallbackQuery):
+    # await callback.answer("Новости подгружаются...") # при этом появляется всплывающее сообщение посередине экрана, а потом оно пропадает
+    await callback.answer("Новости подгружаются...", show_alert=True)  # при этом появляется всплывающее окно посередине экрана с подтвержающей кнопкой ОК, которое можно закрыть вручную
+    # await callback.message.answer("Вот свежие новости!") # при этом бот высылает просто текс
+    await callback.message.edit_text("Вот последние новости!", reply_markup=await kb.test_keyboard2()) # при этом бот высылает текс с inline-кнопками
+
 @dp.message(CommandStart())
 async def start(message: Message):
-    await message.answer(f"Привет, {message.from_user.full_name}! Я твой бот-помощник.")
+    # если хотим использовать первый способ создания клавиатуры Reply, то прописываем
+    # await message.answer(f"Привет, {message.from_user.full_name}! Я твой бот-помощник.", reply_markup=kb.main)
+    # если хотим использовать второй способ создания клавиатуры Inline, то прописываем
+    await message.answer(f"Привет, {message.from_user.full_name}! Я твой бот-помощник.", reply_markup=kb.inline_keyboard_test_2)
+    # если хотим использовать третий способ создания клавиатуры Builder, то прописываем
+    # await message.answer(f"Привет, {message.from_user.full_name}! Я твой бот-помощник.", reply_markup=await kb.test_keyboard())
+
+@dp.message(F.text == "Тестовая кнопка 1")
+async def test_button_1(message: Message):
+    await message.answer("Обработка нажатия на reply-кнопку - Тестовую кнопку 1")
+
+@dp.message(F.text == "Тестовая кнопка 2")
+async def test_button_2(message: Message):
+    await message.answer("Обработка нажатия на reply-кнопку - Тестовую кнопку 2")
+
+@dp.message(F.text == "Тестовая кнопка 3")
+async def test_button_3(message: Message):
+    await message.answer("Обработка нажатия на reply-кнопку - Тестовую кнопку 3")
 
 @dp.message() # ответ бота на все остальные сообщения, кроме текста "стоп" с маленькими буквами
 async def all_answer(message: Message):
