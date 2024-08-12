@@ -3,12 +3,13 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, FSInputFile
 import sqlite3
-from config import TOKEN
+from config import TOKEN, WEATHER_API_KEY
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 import aiohttp
 import logging
+from googletrans import Translator
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -35,8 +36,61 @@ def init_db():
 
 init_db()
 
+@dp.message(CommandStart())
+async def start(message: Message, state: FSMContext):
+    await message.answer(f"Привет, как тебя зовут?")
+    await state.set_state(Form.name)
 
+@dp.message(Form.name)
+async def name(message: Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await message.answer(f"Сколько тебе лет?")
+    await state.set_state(Form.age)
 
+@dp.message(Form.age)
+async def age(message: Message, state: FSMContext):
+    await state.update_data(age=message.text)
+    await message.answer(f"В каком городе живёшь?")
+    await state.set_state(Form.city)
+
+@dp.message(Form.city)
+async def city(message: Message, state: FSMContext):
+    await state.update_data(city=message.text)
+    user_data = await state.get_data()
+
+    conn = sqlite3.connect('user_data.db')
+    cur = conn.cursor()
+    cur.execute("INSERT INTO users (name, age, city) VALUES (?, ?, ?)", (user_data['name'], user_data['age'], user_data['city']))
+    conn.commit()
+    conn.close()
+
+    await message.answer(f"Ваши данные сохранены!")
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={user_data['city']}&appid={WEATHER_API_KEY}&units=metric") as response:
+            if response.status == 200:
+                weather_data = await response.json()
+                main = weather_data['main']
+                weather = weather_data['weather'][0]
+
+                temperature = main['temp']
+                humidity = main['humidity']
+                description = weather['description']
+
+                translator = Translator()
+                description = translator.translate(description, dest='ru').text
+
+                weather_report = (f"В городе {user_data['city']}\n"
+                                  f"сегодня {description}.\n"
+                                  f"Температура: {temperature}°C.\n"
+                                  f"Влажность воздуха: {humidity}%.\n")
+
+                await message.answer(weather_report)
+
+            else:
+                await message.answer("Не удалось получить информацию о погоде")
+
+    await state.clear()
 
 async def main():
     await dp.start_polling(bot)
