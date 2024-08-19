@@ -55,7 +55,7 @@ async def send_cat_info(message: Message):
     else:
         await message.answer("Кошка такой породы не найдена")
 
-# Вот в этом промежутке мы будем работать и писать новый код
+
 
 async def main():
    await dp.start_polling(bot)
